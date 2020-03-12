@@ -19,6 +19,7 @@ from time import sleep
 # channelId is the id of the channel/group/im you want to download history for.
 def getHistory(pageableObject, channelId, pageSize = 100):
     messages = []
+
     lastTimestamp = None
 
     while(True):
@@ -65,11 +66,16 @@ def channelRename( oldRoomName, newRoomName ):
     os.rmdir( oldRoomName )
 
 
+def getKey(item):
+    return item["ts"]
+
 def writeMessageFile( fileName, messages ):
     directory = os.path.dirname(fileName)
 
     if not os.path.isdir( directory ):
         mkdir( directory )
+
+    messages = sorted(messages, key=getKey)
 
     with open(fileName, 'w') as outFile:
         json.dump( messages, outFile, indent=4)
@@ -288,6 +294,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--token', required=True, help="Slack API token")
     parser.add_argument('--zip', help="Name of a zip file to output as")
+    parser.add_argument('--dir', help="Name of the output directory")
 
     parser.add_argument(
         '--dryRun',
@@ -340,7 +347,9 @@ if __name__ == "__main__":
     dryRun = args.dryRun
     zipName = args.zip
 
-    outputDirectory = "{0}-slack_export".format(datetime.today().strftime("%Y%m%d-%H%M%S"))
+    outputDirectory = args.dir
+    if not outputDirectory :
+      outputDirectory = "{0}-slack_export".format(datetime.today().strftime("%Y%m%d-%H%M%S"))
     mkdir(outputDirectory)
     os.chdir(outputDirectory)
 

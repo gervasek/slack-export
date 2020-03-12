@@ -37,6 +37,9 @@ def getHistory(pageableObject, channelId, pageSize = 100):
             sleep(1) # Respect the Slack API rate limit
         else:
             break
+
+    messages.sort(key = lambda message: message['ts'])
+
     return messages
 
 
@@ -72,6 +75,10 @@ def getKey(item):
 def writeMessageFile( fileName, messages ):
     directory = os.path.dirname(fileName)
 
+    # if there's no data to write to the file, return
+    if not messages:
+        return
+
     if not os.path.isdir( directory ):
         mkdir( directory )
 
@@ -94,7 +101,7 @@ def parseMessages( roomDir, messages, roomType ):
 
         #if it's on a different day, write out the previous day's messages
         if fileDate != currentFileDate:
-            outFileName = '{room}/{file}.json'.format( room = roomDir, file = currentFileDate )
+            outFileName = u'{room}/{file}.json'.format( room = roomDir, file = currentFileDate )
             writeMessageFile( outFileName, currentMessages )
             currentFileDate = fileDate
             currentMessages = []
@@ -108,7 +115,7 @@ def parseMessages( roomDir, messages, roomType ):
             channelRename( oldRoomPath, newRoomPath )
 
         currentMessages.append( message )
-    outFileName = '{room}/{file}.json'.format( room = roomDir, file = currentFileDate )
+    outFileName = u'{room}/{file}.json'.format( room = roomDir, file = currentFileDate )
     writeMessageFile( outFileName, currentMessages )
 
 def filterConversationsByName(channelsOrGroups, channelOrGroupNames):
@@ -130,7 +137,7 @@ def fetchPublicChannels(channels):
 
     for channel in channels:
         channelDir = channel['name'].encode('utf-8')
-        print("Fetching history for Public Channel: {0}".format(channelDir))
+        print(u"Fetching history for Public Channel: {0}".format(channelDir))
         channelDir = channel['name'].encode('utf-8')
         mkdir( channelDir )
         messages = getHistory(slack.channels, channel['id'])
@@ -184,7 +191,7 @@ def fetchDirectMessages(dms):
 
     for dm in dms:
         name = userNamesById.get(dm['user'], dm['user'] + " (name unknown)")
-        print("Fetching 1:1 DMs with {0}".format(name))
+        print(u"Fetching 1:1 DMs with {0}".format(name))
         dmId = dm['id']
         mkdir(dmId)
         messages = getHistory(slack.im, dm['id'])
@@ -209,7 +216,7 @@ def fetchGroups(groups):
         groupDir = group['name']
         mkdir(groupDir)
         messages = []
-        print("Fetching history for Private Channel / Group DM: {0}".format(group['name']))
+        print(u"Fetching history for Private Channel / Group DM: {0}".format(group['name']))
         messages = getHistory(slack.groups, group['id'])
         parseMessages( groupDir, messages, 'group' )
 
@@ -231,26 +238,26 @@ def doTestAuth():
     testAuth = slack.auth.test().body
     teamName = testAuth['team']
     currentUser = testAuth['user']
-    print("Successfully authenticated for team {0} and user {1} ".format(teamName, currentUser))
+    print(u"Successfully authenticated for team {0} and user {1} ".format(teamName, currentUser))
     return testAuth
 
 # Since Slacker does not Cache.. populate some reused lists
 def bootstrapKeyValues():
     global users, channels, groups, dms
     users = slack.users.list().body['members']
-    print("Found {0} Users".format(len(users)))
+    print(u"Found {0} Users".format(len(users)))
     sleep(1)
     
     channels = slack.channels.list().body['channels']
-    print("Found {0} Public Channels".format(len(channels)))
+    print(u"Found {0} Public Channels".format(len(channels)))
     sleep(1)
 
     groups = slack.groups.list().body['groups']
-    print("Found {0} Private Channels or Group DMs".format(len(groups)))
+    print(u"Found {0} Private Channels or Group DMs".format(len(groups)))
     sleep(1)
 
     dms = slack.im.list().body['ims']
-    print("Found {0} 1:1 DM conversations\n".format(len(dms)))
+    print(u"Found {0} 1:1 DM conversations\n".format(len(dms)))
     sleep(1)
 
     getUserMap()
@@ -279,7 +286,7 @@ def dumpDummyChannel():
     channelName = channels[0]['name']
     mkdir( channelName )
     fileDate = '{:%Y-%m-%d}'.format(datetime.today())
-    outFileName = '{room}/{file}.json'.format( room = channelName, file = fileDate )
+    outFileName = u'{room}/{file}.json'.format( room = channelName, file = fileDate )
     writeMessageFile(outFileName, [])
 
 def finalize():
